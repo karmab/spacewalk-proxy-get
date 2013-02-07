@@ -39,13 +39,13 @@ sathost     = "192.168.16.2"
 saturl      = "http://%s/rpc/api" % sathost
 satlogin    = "admin"
 satpassword = "prout"
-proxypath   = "/var/spool"
-channel="chanchan"
+#proxypath   = "/var/spool"
+proxypath   = "/tmp"
+channel="proutos"
 sat = xmlrpclib.Server(saturl, verbose=0)
 key = sat.auth.login(satlogin, satpassword)
 
-
-if  os.environ["http-proxy"]:del os.environ["http-proxy"]
+if os.environ.has_key("http-proxy"):del os.environ["http-proxy"]
 os.chdir( proxypath )
 if not os.path.exists("rhn-proxy"):os.makedirs("rhn-proxy")
 os.chdir("rhn-proxy")
