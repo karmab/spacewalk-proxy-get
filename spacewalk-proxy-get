@@ -1,0 +1,76 @@
+#!/usr/bin/python                                                                                                                                                                                                     
+
+#
+# Copyright Red Hat, Inc. 2002-2004, 2013
+#                                        
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the  
+# Free Software Foundation; either version 2, or (at your option) any
+# later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; see the file COPYING. If not, write to the
+# Free Software Foundation, Inc., 675 Mass Ave, Cambridge,
+# MA 02139, USA.
+
+"""
+script to force fetching all rpms within a given channel to a specific directory on the spacewalk/rhn-proxy that will serve first clients, regardless of squid
+"""
+
+import sys
+import xmlrpclib
+import os
+
+__author__ = "Karim Boumedhel"
+__credits__ = ["Karim Boumedhel"]
+__license__ = "GPL"
+__version__ = "0.1"
+__maintainer__ = "Karim Boumedhel"
+__email__ = "karim@redhat.com"
+__status__ = "Production"
+
+
+sathost     = "192.168.16.2"
+saturl      = "http://%s/rpc/api" % sathost
+satlogin    = "admin"
+satpassword = "prout"
+proxypath   = "/var/spool"
+channel="chanchan"
+sat = xmlrpclib.Server(saturl, verbose=0)
+key = sat.auth.login(satlogin, satpassword)
+
+
+if  os.environ["http-proxy"]:del os.environ["http-proxy"]
+os.chdir( proxypath )
+if not os.path.exists("rhn-proxy"):os.makedirs("rhn-proxy")
+os.chdir("rhn-proxy")
+if not os.path.exists("rhn"):os.makedirs("rhn")
+os.chdir("rhn")
+
+packages=sat.channel.software.listAllPackages(key,channel)
+for package in packages:
+ os.chdir("%s/rhn-proxy/rhn" % proxypath )
+ name=package["name"]
+ release=package["release"]
+ version=package["version"]
+ versionrelease="%s-%s" % (version,release)
+ id=package["id"]
+ arch=package["arch_label"]
+ completename="%s-%s.%s.rpm" %(name,versionrelease,arch)
+ if not os.path.exists(name):os.makedirs(name)
+ os.chdir(name)
+ if not os.path.exists(versionrelease):os.makedirs(versionrelease)
+ os.chdir(versionrelease)
+ if not os.path.exists(arch):os.makedirs(arch)
+ os.chdir(arch)
+ if not os.path.exists(completename):
+  packageurl=sat.packages.getPackageUrl(key,id)
+  os.system("wget %s" % packageurl)
+
+sys.exit(0)
+
