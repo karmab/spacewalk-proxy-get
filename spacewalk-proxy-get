@@ -1,4 +1,7 @@
 #!/usr/bin/python                                                                                                                                                                                                     
+"""
+script to force fetching all rpms within a given channel to a specific directory on the spacewalk/rhn-proxy that will serve first clients, regardless of squid
+"""
 
 #
 # Copyright Red Hat, Inc. 2002-2004, 2013
@@ -18,13 +21,12 @@
 # Free Software Foundation, Inc., 675 Mass Ave, Cambridge,
 # MA 02139, USA.
 
-"""
-script to force fetching all rpms within a given channel to a specific directory on the spacewalk/rhn-proxy that will serve first clients, regardless of squid
-"""
-
+import getpass
+import optparse
+import os
 import sys
 import xmlrpclib
-import os
+import optparse
 
 __author__ = "Karim Boumedhel"
 __credits__ = ["Karim Boumedhel"]
@@ -34,34 +36,71 @@ __maintainer__ = "Karim Boumedhel"
 __email__ = "karim@redhat.com"
 __status__ = "Production"
 
+usage="script to force fetching all rpms within a given channel to a specific directory on the spacewalk/rhn-proxy that will serve first clients, regardless of squid"
+version="0.2"
+parser = optparse.OptionParser("Usage: %prog [options]",version=version)
+parser.add_option("-u", "--user", dest="user", type="string", help="User to connect to satellite")
+parser.add_option("-p", "--password", dest="password", type="string", help="Password to connect to satellite")
+parser.add_option("-C", "--channel", dest="channel", type="string", help="Channel to parse")
+parser.add_option("-E", "--env", dest="env", action="store_true", help="Dont delete environment variables such as http_proxy")
+parser.add_option("-H", "--host", dest="host", type="string", help="Satellite host")
+parser.add_option("-R", "--root", dest="root", default="/var/spool",type="string", help="Root path to populate.Defaults to /var/spool")
+parser.add_option("-S", "--ssl", dest="ssl", action="store_true", help="Use SSL")
+parser.add_option("-P", "--package" , dest="package", type="string", help="Package to retrieve")
 
-sathost     = "192.168.16.2"
-saturl      = "http://%s/rpc/api" % sathost
-satlogin    = "admin"
-satpassword = "prout"
-#proxypath   = "/var/spool"
-proxypath   = "/tmp"
-channel="proutos"
-sat = xmlrpclib.Server(saturl, verbose=0)
-key = sat.auth.login(satlogin, satpassword)
+(options, args) = parser.parse_args()
+channel=options.channel
+package=options.package
+env=options.env
+host=options.host
+ssl=options.ssl
+user=options.user
+password=options.password
+root=options.root
 
-if os.environ.has_key("http-proxy"):del os.environ["http-proxy"]
-os.chdir( proxypath )
+if not host:host=raw_input("Enter Satellite hostname or ip:")
+if not user:user=raw_input("Enter user:")
+if not password:password=getpass.getpass("Enter Password:")
+if not channel:channel=raw_input("Enter channel:")
+
+if host=="" or user=="" or password=="" or channel=="":
+ print "Missing parameters.Leaving..."
+ sys.exit(1)
+
+saturl="http://%s/rpc/api" % host
+if ssl:saturl="https://%s/rpc/api" % host
+sat=xmlrpclib.Server(saturl, verbose=0)
+key=sat.auth.login(user,password)
+
+#be sure we dont use squid proxy, as we would potentially cache there
+if not env and os.environ.has_key("http-proxy"):del os.environ["http-proxy"]
+
+#create base structure if not there
+os.chdir( root )
 if not os.path.exists("rhn-proxy"):os.makedirs("rhn-proxy")
 os.chdir("rhn-proxy")
 if not os.path.exists("rhn"):os.makedirs("rhn")
 os.chdir("rhn")
 
-packages=sat.channel.software.listAllPackages(key,channel)
-for package in packages:
- os.chdir("%s/rhn-proxy/rhn" % proxypath )
- name=package["name"]
- release=package["release"]
- version=package["version"]
+
+#check channel exists or dont do anything
+try:
+ packages=sat.channel.software.listAllPackages(key,channel)
+except:
+ print "Channel %s not found..." % channel
+ sys.exit(1)
+
+for pack in packages:
+ os.chdir("%s/rhn-proxy/rhn" % root )
+ name=pack["name"]
+ release=pack["release"]
+ version=pack["version"]
  versionrelease="%s-%s" % (version,release)
- id=package["id"]
- arch=package["arch_label"]
+ id=pack["id"]
+ arch=pack["arch_label"]
  completename="%s-%s.%s.rpm" %(name,versionrelease,arch)
+ if package and package.upper()!=name.upper():continue
+ print "Retrieving %s..." % completename
  if not os.path.exists(name):os.makedirs(name)
  os.chdir(name)
  if not os.path.exists(versionrelease):os.makedirs(versionrelease)
@@ -71,6 +110,7 @@ for package in packages:
  if not os.path.exists(completename):
   packageurl=sat.packages.getPackageUrl(key,id)
   os.system("wget %s" % packageurl)
+ else:
+  print "%s allready there" % completename
 
 sys.exit(0)
-
