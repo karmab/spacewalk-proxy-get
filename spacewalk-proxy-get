@@ -45,7 +45,7 @@ parser.add_option("-p", "--password", dest="password", type="string", help="Pass
 parser.add_option("-C", "--channel", dest="channel", type="string", help="Channel to parse")
 parser.add_option("-E", "--env", dest="env", action="store_true", help="Keep environment variables, http_proxy for instance")
 parser.add_option("-H", "--host", dest="host", type="string", help="Satellite host")
-parser.add_option("-R", "--root", dest="root", default="/var/spool",type="string", help="Root path to populate.Defaults to /var/spool")
+parser.add_option("-R", "--root", dest="root", default="/var/spool",type="string", help="Root path to populate creating a rhn-proxy/rhn subdir.Defaults to /var/spool")
 parser.add_option("-S", "--ssl", dest="ssl", action="store_true", help="Use SSL")
 parser.add_option("-P", "--package" , dest="package", type="string", help="Package to retrieve")
 parser.add_option("-W", "--wget", dest="wget", action="store_true", help="Use wget to retrieve packages")
