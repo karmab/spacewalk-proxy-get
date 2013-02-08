@@ -44,8 +44,8 @@ parser.add_option("-u", "--user", dest="user", type="string", help="User to conn
 parser.add_option("-p", "--password", dest="password", type="string", help="Password to connect to satellite")
 parser.add_option("-C", "--channel", dest="channel", type="string", help="Channel to parse")
 parser.add_option("-E", "--env", dest="env", action="store_true", help="Keep environment variables, http_proxy for instance")
-parser.add_option("-H", "--host", dest="host", type="string", help="Satellite host")
-parser.add_option("-R", "--root", dest="root", default="/var/spool",type="string", help="Root path to populate creating a rhn-proxy/rhn subdir.Defaults to /var/spool")
+parser.add_option("-H", "--host", dest="host", type="string", help="Satellite hostname or ip")
+parser.add_option("-R", "--root", dest="root", default="/var/spool",type="string", help="Root path to populate.A rhn-proxy/rhn subdirectory will be created there.Defaults to /var/spool as expected by spacewalk/rhn-proxy")
 parser.add_option("-S", "--ssl", dest="ssl", action="store_true", help="Use SSL")
 parser.add_option("-P", "--package" , dest="package", type="string", help="Package to retrieve")
 parser.add_option("-W", "--wget", dest="wget", action="store_true", help="Use wget to retrieve packages")
@@ -79,19 +79,22 @@ key=sat.auth.login(user,password)
 if not env and os.environ.has_key("http-proxy"):del os.environ["http-proxy"]
 
 #create base structure if not there
-os.chdir( root )
-if not os.path.exists("rhn-proxy"):os.makedirs("rhn-proxy")
-os.chdir("rhn-proxy")
-if not os.path.exists("rhn"):os.makedirs("rhn")
-os.chdir("rhn")
-
+try:
+ os.chdir( root )
+ if not os.path.exists("rhn-proxy"):os.makedirs("rhn-proxy")
+ os.chdir("rhn-proxy")
+ if not os.path.exists("rhn"):os.makedirs("rhn")
+ os.chdir("rhn")
+except:
+ print "Couldnt create root directory...Run as root?"
+ os._exit(1)
 
 #check channel exists or dont do anything
 try:
  packages=sat.channel.software.listAllPackages(key,channel)
 except:
  print "Channel %s not found..." % channel
- sys.exit(1)
+ os._exit(1)
 
 for pack in packages:
  os.chdir("%s/rhn-proxy/rhn" % root )
