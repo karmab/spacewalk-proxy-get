@@ -45,9 +45,9 @@ parser.add_option("-p", "--password", dest="password", type="string", help="Pass
 parser.add_option("-C", "--channel", dest="channel", type="string", help="Channel to parse")
 parser.add_option("-E", "--env", dest="env", action="store_true", help="Keep environment variables, http_proxy for instance")
 parser.add_option("-H", "--host", dest="host", type="string", help="Satellite hostname or ip")
+parser.add_option("-P", "--package" , dest="package", type="string", help="Package to retrieve")
 parser.add_option("-R", "--root", dest="root", default="/var/spool",type="string", help="Root path to populate.A rhn-proxy/rhn subdirectory will be created there.Defaults to /var/spool as expected by spacewalk/rhn-proxy")
 parser.add_option("-S", "--ssl", dest="ssl", action="store_true", help="Use SSL")
-parser.add_option("-P", "--package" , dest="package", type="string", help="Package to retrieve")
 parser.add_option("-W", "--wget", dest="wget", action="store_true", help="Use wget to retrieve packages")
 
 (options, args) = parser.parse_args()
