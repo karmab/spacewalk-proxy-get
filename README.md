@@ -5,4 +5,4 @@ populate spacewalk-proxy bypassing squid for a given package or an entire channe
 Basic usage:
  spacewalk-proxy-get -u admin -p prout -C your_channel -H 192.168.16.2
  spacewalk-proxy-get -u admin -p prout -C your_channel -H 192.168.16.2 -P your_package
- Note we currently use wget
+ wget can also be specified at download helper with -W

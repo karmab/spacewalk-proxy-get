@@ -21,6 +21,7 @@ script to force fetching all rpms within a given channel to a specific directory
 # Free Software Foundation, Inc., 675 Mass Ave, Cambridge,
 # MA 02139, USA.
 
+from urllib2 import urlopen
 import getpass
 import optparse
 import os
@@ -47,6 +48,7 @@ parser.add_option("-H", "--host", dest="host", type="string", help="Satellite ho
 parser.add_option("-R", "--root", dest="root", default="/var/spool",type="string", help="Root path to populate.Defaults to /var/spool")
 parser.add_option("-S", "--ssl", dest="ssl", action="store_true", help="Use SSL")
 parser.add_option("-P", "--package" , dest="package", type="string", help="Package to retrieve")
+parser.add_option("-W", "--wget", dest="wget", action="store_true", help="Use wget to retrieve packages")
 
 (options, args) = parser.parse_args()
 channel=options.channel
@@ -57,6 +59,7 @@ ssl=options.ssl
 user=options.user
 password=options.password
 root=options.root
+wget=options.wget
 
 if not host:host=raw_input("Enter Satellite hostname or ip:")
 if not user:user=raw_input("Enter user:")
@@ -109,7 +112,13 @@ for pack in packages:
  os.chdir(arch)
  if not os.path.exists(completename):
   packageurl=sat.packages.getPackageUrl(key,id)
-  os.system("wget %s" % packageurl)
+  if wget:
+   os.system("wget %s" % packageurl)
+  else:
+   ori=urlopen(packageurl)
+   dest=open(completename, "w")
+   dest.write(ori.read())
+   dest.close()
  else:
   print "%s allready there" % completename
 
