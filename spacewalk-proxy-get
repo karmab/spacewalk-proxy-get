@@ -32,7 +32,7 @@ import optparse
 __author__ = "Karim Boumedhel"
 __credits__ = ["Karim Boumedhel"]
 __license__ = "GPL"
-__version__ = "0.1"
+__version__ = "0.2"
 __maintainer__ = "Karim Boumedhel"
 __email__ = "karim@redhat.com"
 __status__ = "Production"
