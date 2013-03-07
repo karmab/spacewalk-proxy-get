@@ -62,12 +62,20 @@ root=options.root
 wget=options.wget
 
 if not host:host=raw_input("Enter Satellite hostname or ip:")
+if host=="":
+ print "Host cant be blank"
+ sys.exit(1)
 if not user:user=raw_input("Enter user:")
+if user=="":
+ print "User cant be blank"
+ sys.exit(1)
 if not password:password=getpass.getpass("Enter Password:")
+if password=="":
+ print "Password cant be blank"
+ sys.exit(1)
 if not channel:channel=raw_input("Enter channel:")
-
-if host=="" or user=="" or password=="" or channel=="":
- print "Missing parameters.Leaving..."
+if channel=="":
+ print "Channel cant be blank"
  sys.exit(1)
 
 saturl="http://%s/rpc/api" % host
