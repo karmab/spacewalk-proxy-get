@@ -127,14 +127,19 @@ for pack in packages:
   if wget:
    os.system("wget %s" % packageurl)
   else:
-   ori=urlopen(packageurl)
-   dest=open(completename, "w")
-   dest.write(ori.read())
-   dest.close()
-   downloadedsize=str(os.path.getsize(completename))
-   if downloadedsize!=packagesize:
-    print "Failure retrieving %s" % completename
-    os.remove(completename)
+   try:
+    ori=urlopen(packageurl)
+    dest=open(completename, "w")
+    dest.write(ori.read())
+    dest.close()
+    downloadedsize=str(os.path.getsize(completename))
+    if downloadedsize!=packagesize:
+     print "Failure retrieving %s" % completename
+     os.remove(completename)
+   except HTTPError, e:
+    print "HTTP Error:",e.code , packageurl
+   except URLError, e:
+    print "URL Error:",e.reason , packageurl
  else:
   print "%s allready there" % completename
 
