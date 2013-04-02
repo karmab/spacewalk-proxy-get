@@ -123,6 +123,7 @@ for pack in packages:
  os.chdir(arch)
  if not os.path.exists(completename):
   packageurl=sat.packages.getPackageUrl(key,id)
+  packagesize=sat.packages.getDetails(key,id)["size"]
   if wget:
    os.system("wget %s" % packageurl)
   else:
@@ -130,6 +131,10 @@ for pack in packages:
    dest=open(completename, "w")
    dest.write(ori.read())
    dest.close()
+   downloadedsize=str(os.path.getsize(completename))
+   if downloadedsize!=packagesize:
+    print "Failure retrieving %s" % completename
+    os.remove(completename)
  else:
   print "%s allready there" % completename
 
