@@ -49,6 +49,7 @@ parser.add_option("-P", "--package" , dest="package", type="string", help="Packa
 parser.add_option("-R", "--root", dest="root", default="/var/spool",type="string", help="Root path to populate.A rhn-proxy/rhn subdirectory will be created there.Defaults to /var/spool as expected by spacewalk/rhn-proxy")
 parser.add_option("-S", "--ssl", dest="ssl", action="store_true", help="Use SSL")
 parser.add_option("-W", "--wget", dest="wget", action="store_true", help="Use wget to retrieve packages")
+parser.add_option("-V", "--verify", dest="verify", action="store_true", default=False, help="Check the existing package")
 
 (options, args) = parser.parse_args()
 channel=options.channel
@@ -121,6 +122,14 @@ for pack in packages:
  os.chdir(versionrelease)
  if not os.path.exists(arch):os.makedirs(arch)
  os.chdir(arch)
+ if os.path.exists(completename) and options.verify:
+  packageurl=sat.packages.getPackageUrl(key,id)
+  packagesize=sat.packages.getDetails(key,id)["size"]
+  if str(os.path.getsize(completename) == packagesize:
+   print "File %s has the expected size of %s" % (completename, str(packagesize))
+  else:
+   print "File %s does not have the expected size of %s" % (completename, str(packagesize))
+   os.remove(completename)
  if not os.path.exists(completename):
   packageurl=sat.packages.getPackageUrl(key,id)
   packagesize=sat.packages.getDetails(key,id)["size"]
