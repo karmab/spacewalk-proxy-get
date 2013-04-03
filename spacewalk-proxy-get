@@ -61,6 +61,7 @@ user=options.user
 password=options.password
 root=options.root
 wget=options.wget
+verify=options.verify
 
 if not host:host=raw_input("Enter Satellite hostname or ip:")
 if host=="":
@@ -121,7 +122,7 @@ for pack in packages:
  os.chdir(versionrelease)
  if not os.path.exists(arch):os.makedirs(arch)
  os.chdir(arch)
- if options.verify and os.path.exists(completename):
+ if verify and os.path.exists(completename):
   packagesize=sat.packages.getDetails(key,id)["size"]
   if str(os.path.getsize(completename)) != packagesize:
    print "ERROR with %s" % (completename)
