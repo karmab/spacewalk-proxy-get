@@ -115,7 +115,6 @@ for pack in packages:
  arch=pack["arch_label"]
  completename="%s-%s.%s.rpm" %(name,versionrelease,arch)
  if package and package.upper()!=name.upper():continue
- print "Retrieving %s..." % completename
  if not os.path.exists(name):os.makedirs(name)
  os.chdir(name)
  if not os.path.exists(versionrelease):os.makedirs(versionrelease)
@@ -124,12 +123,12 @@ for pack in packages:
  os.chdir(arch)
  if options.verify and os.path.exists(completename):
   packagesize=sat.packages.getDetails(key,id)["size"]
-  if str(os.path.getsize(completename)) == packagesize:
-   print "File %s has the expected size of %s" % (completename, str(packagesize))
-  else:
-   print "File %s does not have the expected size of %s" % (completename, str(packagesize))
+  if str(os.path.getsize(completename)) != packagesize:
+   print "ERROR:File %s" % (completename)
    os.remove(completename)
+  continue
  if not os.path.exists(completename):
+  print "Retrieving %s..." % completename
   packageurl=sat.packages.getPackageUrl(key,id)
   packagesize=sat.packages.getDetails(key,id)["size"]
   if wget:
