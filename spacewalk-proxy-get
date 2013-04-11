@@ -50,6 +50,7 @@ parser.add_option("-R", "--root", dest="root", default="/var/spool",type="string
 parser.add_option("-S", "--ssl", dest="ssl", action="store_true", help="Use SSL")
 parser.add_option("-W", "--wget", dest="wget", action="store_true", help="Use wget to retrieve packages")
 parser.add_option("-V", "--verify", dest="verify", action="store_true", default=False, help="Check the existing package")
+parser.add_option("-v", "--verbose", dest="verbose", action="store_true", default=False, help="Turns up the verbosity")
 
 (options, args) = parser.parse_args()
 channel=options.channel
@@ -62,6 +63,7 @@ password=options.password
 root=options.root
 wget=options.wget
 verify=options.verify
+verbose=options.verbose
 
 if not host:host=raw_input("Enter Satellite hostname or ip:")
 if host=="":
@@ -132,6 +134,10 @@ for pack in packages:
   print "Retrieving %s..." % completename
   packageurl=sat.packages.getPackageUrl(key,id)
   packagesize=sat.packages.getDetails(key,id)["size"]
+  if verbose:
+   print "package id : "+str(id)
+   print "url: "+packageurl
+   print "size: "+str(packagesize)
   if wget:
    os.system("wget %s" % packageurl)
   else:
