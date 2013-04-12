@@ -7,7 +7,7 @@
 __author__ = "Felix Dewaleyne"
 __credits__ = ["Felix Dewaleyne"]
 __license__ = "GPL"
-__version__ = "1.0"
+__version__ = "1.1"
 __maintainer__ = "Felix Dewaleyne"
 __email__ = "fdewaley@redhat.com"
 __status__ = "Production"
@@ -52,12 +52,12 @@ def find_bad_packages(channel, provider):
     global key
     global verbose
     bad_packages=[]
-    for package in client.software.channel.listAllPackages(key,channel):
+    for package in client.channel.software.listAllPackages(key,channel):
         has_passed=False
         matched=False
         packageDetails = client.packages.getDetails(key,package['id'])
         #the provider is not part of the package details so we have to do this another way
-        for similarPackage in find_similar_packages(packageDetails['name'],packageDetails['version'], packageDetails['epoch'], packageDetails['arch_label']):
+        for similarPackage in find_similar_packages(packageDetails['name'],packageDetails['version'], packageDetails['release'], packageDetails['epoch'], packageDetails['arch_label']):
             if similarPackage['id'] == package['id']:
                 matched = True
                 if similarPackage['provider'] == provider:
@@ -79,13 +79,13 @@ def auto_fix(channel, provider):
     global verbose
     bad_packages=[]
     good_packages=[]
-    for package in client.software.channel.listAllPackages(key,channel):
+    for package in client.channel.software.listAllPackages(key,channel):
         has_passed=False
         matched=False
         correct_package = None
         packageDetails = client.packages.getDetails(key,package['id'])
         #the provider is not part of the package details so we have to do this another way
-        for similarPackage in find_similar_packages(packageDetails['name'],packageDetails['version'], packageDetails['epoch'], packageDetails['arch_label']):
+        for similarPackage in find_similar_packages(packageDetails['name'],packageDetails['version'], packageDetails['release'], packageDetails['epoch'], packageDetails['arch_label']):
             if similarPackage['id'] == package['id']:
                 matched = True
                 if similarPackage['provider'] == provider:
@@ -122,8 +122,8 @@ def main(version):
     parser.add_option("-v", "--verbose", dest="verbose", action="store_true", default=False, help="Turns up the verbosity")
     parser.add_option("-l", "--list", dest="listing", action="store_true", default=False, help="List all the packages affected")
     parser.add_option("-a", "--auto", dest="automatic", action="store_true", default=False, help="Attempts to automatically fix the packages found")
-    parser.add_option("--provider", default=None, dest="provider", help="Name of the provider of the package that we want to find. Required for fixing the content.")
-    parser.add_option("-P", "--listproviders", action="store_true", default=False, help="Make the script list the providers defined and exit. only the base org admin can list the providers")
+    parser.add_option("-P", "--provider", default=None, dest="provider", help="Name of the provider of the package that we want to find. Required for fixing the content.")
+    parser.add_option("--listproviders", dest="listproviders", action="store_true", default=False, help="Make the script list the providers defined and exit. only the base org admin can list the providers")
     (options, args) = parser.parse_args()
     verbose = options.verbose
     URL="http://%s/rpc/api" % options.host
@@ -134,18 +134,18 @@ def main(version):
         #init
         client = xmlrpclib.Server(URL)
         key = client.auth.login(options.user,options.password)
-        if options.listprovider :
+        if options.listproviders :
             for provider in client.packages.provider.list(key):
-                for key in provider['keys']:
-                    print provider['name']+" - "+key['key']
-        elif options.listing :
+                for akey in provider['keys']:
+                    print "%20s - %s " % (provider['name'], akey['key'])
+        elif options.listing and options.channel == None:
             print "list of channels: "
-            for channel in client.channel.software.listMyChannels(key):
+            for channel in client.channel.listMyChannels(key):
                 print "%40s - %s" % (channel['label'], channel['name'])
         elif options.listing and options.channel != None and options.provider != None: 
             print "checking for packages that aren't from the given provider - this will take time. use verbose to see all packages"
             find_bad_packages(options.channel, options.provider) 
-        elif options.auto and options.channel != None and options.provider != None:
+        elif options.automatic and options.channel != None and options.provider != None:
             print "checking for packages that aren't from the given provider and attempting to fix if a package is available"
             auto_fix(options.channel,options.provider)
         else:
