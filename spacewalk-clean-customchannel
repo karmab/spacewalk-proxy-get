@@ -13,7 +13,7 @@ __email__ = "fdewaley@redhat.com"
 __status__ = "Production"
 
 # offers to list all packages that are not signed with a specific key, tries to change them to a NVREA identical package of the right signature, when possible
-
+# this script doesn't remove any package from the database, only from channels.
 
 import xmlrpclib, warnings
 URL=None
@@ -28,7 +28,7 @@ def replace_packages(channel,badids=[],goodids=[]):
     try:
         client.channel.software.removePackages(key,channel,badids)
     except:
-        warnings.warn( "failed to remove")
+        warnings.warn( "failed to remove packages from the channel")
         raise
     try:
         client.channel.software.addPackages(key,channel,goodids)
