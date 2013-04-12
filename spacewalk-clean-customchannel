@@ -1,0 +1,158 @@
+#!/usr/bin/python
+
+##
+# To the extent possible under law, Red Hat, Inc. has dedicated all copyright to this software to the public domain worldwide, pursuant to the CC0 Public Domain Dedication. 
+# This software is distributed without any warranty.  See <http://creativecommons.org/publicdomain/zero/1.0/>.
+##
+__author__ = "Felix Dewaleyne"
+__credits__ = ["Felix Dewaleyne"]
+__license__ = "GPL"
+__version__ = "1.0"
+__maintainer__ = "Felix Dewaleyne"
+__email__ = "fdewaley@redhat.com"
+__status__ = "Production"
+
+# offers to list all packages that are not signed with a specific key/
+# needs to offer a replacement for each.
+
+
+import xmlrpclib, warnings
+URL=None
+client=None
+key=None
+verbose=False
+
+def replace_packages(channel,badids=[],goodids=[]):
+    """takes in argument the bad package ids and the good package ids, the channel name and applies the change"""
+    global client
+    global key
+    try:
+        client.channel.software.removePackages(key,channel,badids)
+    except:
+        warnings.warn( "failed to remove")
+        raise
+    try:
+        client.channel.software.addPackages(key,channel,goodids)
+    except:
+        warnings.warn("failed to add, trying to add the old packages")
+        client.channel.software.addPackages(key,channel,badids)
+        raise
+    print "switching done"
+
+def find_similar_packages(name, version, release, epoch, arch):
+    """returns a list of all the packages with similar nave version release epoch arch on the satellite"""
+    global key
+    global client
+    result = client.packages.findByNvrea(key, name, version,release, epoch, arch)
+    return result
+
+def find_bad_packages(channel, provider):
+    """returns all bad packages in a channel in a list - id per id"""
+    global client
+    global key
+    global verbose
+    bad_packages=[]
+    for package in client.software.channel.listAllPackages(key,channel):
+        has_passed=False
+        matched=False
+        packageDetails = client.packages.getDetails(key,package['id'])
+        #the provider is not part of the package details so we have to do this another way
+        for similarPackage in find_similar_packages(packageDetails['name'],packageDetails['version'], packageDetails['epoch'], packageDetails['arch_label']):
+            if similarPackage['id'] == package['id']:
+                matched = True
+                if similarPackage['provider'] == provider:
+                    has_passsed = True
+                break
+        if not matched:
+            warnings.warn("unable to find the package through the api. Should not happen!")
+        if not has_passed:
+            bad_packages.append(package['id'])
+            print "NOT OK package %s-%s-%s of id %s" % (package['name'],str(package['version']), str(package['release']), str(package['id']))
+        elif verbose :
+            print "OK package %s-%s-%s of id %s" % (package['name'],str(package['version']), str(package['release']), str(package['id']))
+    return bad_packages
+
+def auto_fix(channel, provider):
+    """finds all the bad packages then attempts to call the replace function to replace them with the one of the right provider"""
+    global client
+    global key
+    global verbose
+    bad_packages=[]
+    good_packages=[]
+    for package in client.software.channel.listAllPackages(key,channel):
+        has_passed=False
+        matched=False
+        correct_package = None
+        packageDetails = client.packages.getDetails(key,package['id'])
+        #the provider is not part of the package details so we have to do this another way
+        for similarPackage in find_similar_packages(packageDetails['name'],packageDetails['version'], packageDetails['epoch'], packageDetails['arch_label']):
+            if similarPackage['id'] == package['id']:
+                matched = True
+                if similarPackage['provider'] == provider:
+                    has_passsed = True
+                    break #we don't care about this package anymore no use continueing looking for its correct alternatives
+            elif similarPackage['provider'] == provider:
+                correct_package = similarPackage
+        if not matched:
+            warnings.warn("unable to find the package through the api. Should not happen!")
+        if not has_passed and correct_package != None:
+            good_packages.append(correct_package['id'])
+            bad_packages.append(package['id'])
+            print "NOT OK package %s-%s-%s of id %s" % (package['name'],str(package['version']), str(package['release']), str(package['id']))
+        elif not has_passed and correct_package == None:
+            warnings.warn("did not find a correct package for package id "+str(package['id']))
+        elif has_passed and verbose :
+            print "OK package %s-%s-%s of id %s" % (package['name'],str(package['version']), str(package['release']), str(package['id']))
+    #good now we have the two lists of packages,let's do the swap on a global scale
+    replace_packages(channel, good_packages, bad_packages)
+    #done
+    pass
+
+def main(version):
+    import optparse
+    global URL
+    global client
+    global key
+    global verbose
+    parser = optparse.OptionParser("Usage: %prog [options]",version=version)
+    parser.add_option("-u", "--user", dest="user", type="string", help="User to connect to satellite")
+    parser.add_option("-p", "--password", dest="password", type="string", help="Password to connect to satellite")
+    parser.add_option("-c", "--channel", dest="channel", default=None, type="string", help="Label of the Channel to parse. Required for most operations")
+    parser.add_option("-H", "--host", dest="host", type="string", default="127.0.0.1", help="Satellite hostname or ip - defaults to %default")
+    parser.add_option("-v", "--verbose", dest="verbose", action="store_true", default=False, help="Turns up the verbosity")
+    parser.add_option("-l", "--list", dest="listing", action="store_true", default=False, help="List all the packages affected")
+    parser.add_option("-a", "--auto", dest="automatic", action="store_true", default=False, help="Attempts to automatically fix the packages found")
+    parser.add_option("--provider", default=None, dest="provider", help="Name of the provider of the package that we want to find. Required for fixing the content.")
+    parser.add_option("-P", "--listproviders", action="store_true", default=False, help="Make the script list the providers defined and exit. only the base org admin can list the providers")
+    (options, args) = parser.parse_args()
+    verbose = options.verbose
+    URL="http://%s/rpc/api" % options.host
+
+    if not options.user or not  options.password:
+        parser.error('username and password are required options.')
+    else:
+        #init
+        client = xmlrpclib.Server(URL)
+        key = client.auth.login(options.user,options.password)
+        if options.listprovider :
+            for provider in client.packages.provider.list(key):
+                for key in provider['keys']:
+                    print provider['name']+" - "+key['key']
+        elif options.listing :
+            print "list of channels: "
+            for channel in client.channel.software.listMyChannels(key):
+                print "%40s - %s" % (channel['label'], channel['name'])
+        elif options.listing and options.channel != None and options.provider != None: 
+            print "checking for packages that aren't from the given provider - this will take time. use verbose to see all packages"
+            find_bad_packages(options.channel, options.provider) 
+        elif options.auto and options.channel != None and options.provider != None:
+            print "checking for packages that aren't from the given provider and attempting to fix if a package is available"
+            auto_fix(options.channel,options.provider)
+        else:
+            parser.error("unable to determine what to do - use -h for usage information")
+
+        client.auth.logout(key)
+
+if __name__ == "__main__":
+    main(__version__)
+
