@@ -100,7 +100,7 @@ def auto_fix(channel, provider):
             bad_packages.append(package['id'])
             print "NOT OK package %s-%s-%s of id %s" % (package['name'],str(package['version']), str(package['release']), str(package['id']))
         elif not has_passed and correct_package == None:
-            warnings.warn("did not find a correct package for package id "+str(package['id']))
+            print "NOT OK - IGNORING - did not find a correct package for package  %s-%s-%s of id %s" % (package['name'],str(package['version']), str(package['release']), str(package['id']))
         elif has_passed and verbose :
             print "OK package %s-%s-%s of id %s" % (package['name'],str(package['version']), str(package['release']), str(package['id']))
     #good now we have the two lists of packages,let's do the swap on a global scale
