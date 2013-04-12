@@ -3,7 +3,7 @@ spacewalk-proxy-get
 
 *populate spacewalk-proxy bypassing squid for a given package or an entire channel.Search on package is case insensitive*
 
-###Basic usage:
+####Basic usage:
 ~~~
 spacewalk-proxy-get -u admin -p passwd -C your_channel -H 192.168.16.2
  
@@ -20,7 +20,7 @@ spacewalk-proxy-get -u admin -p passwd -C a_channel -H 192.168.16.2 -V
 
 all options can be seen through the -h option
 
-###The spacewalk-clean-customchannel
+####The spacewalk-clean-customchannel script
 
 *this script is meant to make sure that, in the mesure of the possible, only one source of signature is used for the packages in that channel.*
 
