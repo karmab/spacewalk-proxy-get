@@ -12,8 +12,7 @@ __maintainer__ = "Felix Dewaleyne"
 __email__ = "fdewaley@redhat.com"
 __status__ = "Production"
 
-# offers to list all packages that are not signed with a specific key/
-# needs to offer a replacement for each.
+# offers to list all packages that are not signed with a specific key, tries to change them to a NVREA identical package of the right signature, when possible
 
 
 import xmlrpclib, warnings
